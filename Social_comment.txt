@@ -163,3 +163,161 @@ export class SocialCommentComponent implements OnChanges {
 .comment-list-div li{
     list-style: none;
 }
+
+
+<div *ngIf="contextactive">
+    <div class="contextmenu" [ngStyle]="{'left.px': xposition, 'top.px': yposition}">
+        <button class="comment-button" (click)="onClickInsert($event)">Insert comment</button>
+    </div>
+</div>
+
+import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+
+
+@Component({
+    selector: 'context-menu',
+    templateUrl: './context-menu-component.html',
+    styleUrls: ['./context-menu.css']
+})
+export class ContextMenuComponent implements OnChanges {
+
+    contextactive;
+    yposition;
+    xposition;
+
+    @Output() contextEvent = new EventEmitter();
+
+    @Input() set contextActive(value){
+        this.contextactive = value;
+    }
+
+    @Input()set x(value){
+        this.xposition = value;
+    }
+
+    @Input()set y(value){
+        this.yposition = value;
+    }
+    
+    constructor() {
+
+    }
+
+    onClickInsert(event){
+        this.contextEvent.emit(event);
+    }
+
+    ngOnChanges(sc: SimpleChanges) {
+        console.log('sdfdf' + sc);
+        if (sc['active']) {
+            // this.calculatePositionComment();
+        }
+    }
+
+
+}
+
+.contextmenu{
+    position: absolute;
+    z-index: 1070;
+    background-color: gray;
+}
+.comment-button{
+    cursor: pointer;
+}
+
+import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { ICellRendererAngularComp } from 'ag-grid-angular';
+import { MatMenuTrigger } from '@angular/material/menu';
+import { stringify } from 'querystring';
+
+@Component({
+    selector: 'custom-cell-render',
+    template: `<div *ngIf="editable" class="input-wrapper"><input type="number" 
+    [(ngModel)]="value" class="custom-input" 
+    (contextmenu)="onContextMenu($event)" />
+    <span [class.social-comment-marker]="socialCommentActive"
+    (mouseover)="onMouseOver($event)" (mouseout)="onMouseOut($event)"></span></div>
+    <div *ngIf="!editable" (contextmenu)="onContextMenu($event)">{{value}}
+    <span *ngIf="socialCommentActive" [class.social-comment-marker]="socialCommentActive" [class.cell-noneditable]="socialCommentActive"
+    (mouseover)="onMouseOver($event)" (mouseout)="onMouseOut($event)"></span>
+    </div>
+    `,
+    styleUrls: ['./custom-cell-render.css']
+})
+export class CustomCellRenderComponent implements ICellRendererAngularComp {
+    
+    contextActive = false;
+    contextmenuX = 0;
+    contextmenuY = 0;
+    public params: any;
+    socialCommentActive = false;
+    value;
+    editable;
+    agInit(params: any): void {
+        this.params = params;
+        let age = params.value.toString();
+        let data = age.split("-");
+        this.editable = params.colDef.editable;
+        if(data.length === 2){
+            this.value = parseInt(data[0]);  
+            this.socialCommentActive = true;
+            return;
+        }
+        this.value = params.data.age;
+    }
+
+    public onMouseOver(event) {
+        this.params.context.componentParent.onCellMouseOver(`${event.pageX},${this.params.rowIndex}`);
+        //this.params.context.componentParent.onCellMouseOver(`event: ${event}, params: ${this.params}`);
+    }
+
+    public onMouseOut(event) {
+        this.params.context.componentParent.onCellMouseOut(`event: ${event}, params: ${this.params}`);
+    }
+
+    onContextMenu(event){
+        event.preventDefault;
+        // this.socialCommentActive = true;
+        let value = {};
+        value['event'] = event;
+        value['params'] = this.params;
+        this.params.context.componentParent.onContextMenuOut(value);
+        // this.contextmenuX = event.clientX;
+        // this.contextmenuY = event.clientY;
+        // this.contextActive = true;
+         return false;
+    }
+
+    refresh(): boolean {
+        return false;
+    }
+}
+
+.custom-input {
+    border: none
+}
+.input-wrapper,.custom-input {
+    height: 100%;
+    width : 100%;
+    line-height: normal;
+}
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+.social-comment-marker{
+    border-right-color: yellow;
+    border-style: solid;
+    border-width: 0px 5px 0px 0px;
+    height: 10px;
+    position: absolute;
+}
+.cell-noneditable{
+    padding-left: 150px;
+}
+
+
