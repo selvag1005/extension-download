@@ -321,3 +321,195 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 
+import { Component, HostListener, ViewChild } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { AgGridModule} from 'ag-grid-angular';
+
+import * as jsPDF from 'jspdf';
+import { CustomCellRenderComponent } from './components/custom-cell-render/custom-cell-render-component';
+import { MatMenuTrigger } from '@angular/material/menu';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  title = 'learn-angular-app';
+
+  socialActive = false;
+
+  private gridApi;
+  private gridColumnApi;
+  gridOptions;
+  getContextMenuItems;
+  private columnDefs;
+  private defaultColDef;
+  private rowData: any = [];
+  private frameworkComponents;
+  context;
+  contextActive = false;
+  xPosition = 0;
+  yPosition = 0;
+  rowNodeData;
+
+  @ViewChild(MatMenuTrigger, {static:false}) trigger: MatMenuTrigger;
+  constructor(private http: HttpClient) {
+    this.columnDefs = [
+      {
+        field: "athlete",
+        cellClassRules: { "cell-span": "value==='Aleksey Nemov' || value==='Ryan Lochte'" },
+        cellRenderer: "customRender",
+        editable: false,
+        width: 200
+      },
+      { field: "age", cellRenderer: "customRender", editable: true },
+      { field: "country" },
+      { field: "year" },
+      { field: "date" },
+      { field: "sport" },
+      { field: "gold" },
+      { field: "silver" },
+      { field: "bronze" },
+      { field: "total" }
+    ];
+    this.defaultColDef = {
+      width: 100,
+      resizable: true
+    };
+    this.gridOptions = {
+      columnDefs: this.columnDefs,
+      enableRangeSelection: true,
+      allowContextMenuWithControlKey: true,
+      getContextMenuItems: this.getContextMenuItems
+    };
+    this.getContextMenuItems = [
+      { // custom item
+        name: 'Delete',
+        action: function () {
+          console.log('dsfgdg');
+          this.delete();
+        }
+      },
+      "separator",
+      "copy"
+    ]
+
+    this.context = { componentParent: this };
+
+    this.frameworkComponents = {
+      customRender: CustomCellRenderComponent
+    };
+  }
+
+  onGridReady(params) {
+    this.gridApi = params.api;
+    this.gridColumnApi = params.columnApi;
+
+    this.http
+      .get(
+        "https://raw.githubusercontent.com/ag-grid/ag-grid/master/packages/ag-grid-docs/src/olympicWinnersSmall.json"
+      )
+      .subscribe(data => {
+        this.rowData = data;
+      });
+  }
+
+  export(event) {
+    // var doc = new jsPDF();
+    // var htmlSource = window.document.getElementById('myGrid');
+    // doc.fromHTML(htmlSource, 100, 100);
+    // doc.save('text.pdf');
+    this.socialActive = true;
+  }
+
+  onCellMouseOver(value){
+    let position = value.split(",");
+    let y = parseInt(position[1]) + 1;
+
+    this.xPosition = position[0];
+    this.yPosition = (y * 28)+60;
+    this.socialActive = true;
+  }
+
+  onCellMouseOut(event){
+   // this.socialActive = false;
+  }
+
+  onContextMenuOut(value){
+    let y;
+    let event = value['event'];
+    this.rowNodeData = value['params']
+    if(this.rowNodeData.colDef.editable){
+      y = parseInt(event.srcElement.parentElement.parentElement.parentElement.parentNode.attributes[3].value)+1;
+    }else{
+      y = parseInt(event.srcElement.parentElement.parentElement.parentNode.attributes[3].value)+1;
+    }
+    this.contextActive = true;
+    this.xPosition = event.pageX;
+    this.yPosition = (y * 28)+60;
+   // this.trigger.openMenu();
+  }
+
+  onContextEvent(event){
+    this.contextActive = false;
+    this.socialActive = true;
+  }
+
+  onCancelClick(){
+    this.socialActive = false;
+  }
+
+  onCommentClick(){
+    let rowNode = this.gridApi.getRowNode(this.rowNodeData.node.rowIndex);
+    let data = this.rowNodeData.data.age + '-comment';
+    rowNode.setDataValue(this.rowNodeData.colDef.field,data);
+  }
+  onCellClicked(){
+    this.socialActive = false;
+  }
+  // @HostListener('mouseover') mouseover(event:Event){
+  //   console.log('event'+event);
+  // }
+  // getContextMenuItems(params) {
+  //   var result = [
+  //     { // custom item
+  //       name: 'Delete',
+  //       action: function () {
+  //         console.log('dsfgdg');
+  //         this.delete();
+  //       }
+  //     }
+  //   ]
+  //   return result;
+  // }
+
+
+}
+
+<social-comment [ngStyle]="{'left.px': xPosition, 'top.px': yPosition-100}" 
+(cancelClick)="onCancelClick()" (commentClick)="onCommentClick($event)" [socialactive]="socialActive" class="social-comment"></social-comment>
+<context-menu [contextActive]="contextActive" [x]="xPosition" [y]="yPosition" (contextEvent)="onContextEvent($event)"></context-menu>
+<button (click)="export($event)">export</button>
+<ag-grid-angular
+      #agGrid
+      style="width: auto; height: 600px;"
+      id="myGrid"
+      class="ag-theme-balham"
+
+      [rowData]="rowData"
+      [gridOptions]="gridOptions"
+      [enableRangeSelection]="true"
+      [allowContextMenuWithControlKey]="true"
+      [context]="context"
+      (cellClicked)="onCellClicked()"
+      [frameworkComponents]="frameworkComponents"
+      [getContextMenuItems]="getContextMenuItems"
+      (gridReady)="onGridReady($event)"
+    ></ag-grid-angular>
+    <button [matMenuTriggerFor]="appMenu"></button>
+    <mat-menu #appMenu="matMenu">
+      <button mat-menu-item>Insert Comment</button>
+    </mat-menu>
+    
+<router-outlet></router-outlet>
