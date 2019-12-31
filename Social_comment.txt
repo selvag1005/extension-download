@@ -1,0 +1,165 @@
+<ng-container *ngIf="active">
+    <div class="arrow"></div>
+    <h3 class="popover-header">Comment</h3>
+    <div class="comment-list-div" *ngIf="commentList.length > 0">
+        <li *ngFor="let comment of commentList">{{comment}}</li>
+    </div>
+
+    <div class="popover-body" >
+        <textarea [(ngModel)]="comment" class="comment-area" placeholder="Enter a comment"></textarea><br/>
+        <span class="comment-length">{{comment.length}}/139</span>
+    </div>
+    <div class="popover-footer">
+        <button class="social-button default social-button-cancel" (click)="onCancel($event)">Cancel</button>
+        <button class="social-button primary social-button-comment" [disabled]="comment.length === 0" (click)="onComment($event)" >Comment</button>
+    </div>
+</ng-container>
+
+
+import { Component, Input, OnChanges, SimpleChanges, EventEmitter, Output } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+
+@Component({
+    selector: 'social-comment',
+    templateUrl: './social-comment-component.html',
+    styleUrls: ['./social-comment.css']
+})
+export class SocialCommentComponent implements OnChanges {
+
+    active;
+    comment = '';
+    commentList = [];
+
+    @Input() set socialactive(value){
+        this.active = value;
+        this.commentList = [];
+    }
+
+    @Output() cancelClick = new  EventEmitter();
+    @Output() commentClick = new EventEmitter();
+    constructor() {
+
+    }
+
+    ngOnChanges(sc: SimpleChanges) {
+        console.log('sdfdf' + sc);
+        if (sc['active']) {
+            this.calculatePositionComment();
+        }
+    }
+
+    onCancel(event) {
+        this.cancelClick.emit();
+        this.comment = '';
+    }
+
+    onComment($event){
+        const comment = this.comment;
+        this.commentList.push(comment);
+        this.comment = '';
+        this.commentClick.emit();
+    }
+    private calculatePositionComment = () => {
+
+    }
+}
+
+
+
+.arrow{
+    top: 50%;
+    margin-top: -.5rem;
+    left: calc((.5rem + 1px) * -1);
+    width: .5rem;
+    height: 1rem;
+    margin: .3rem 0;
+    position: absolute;
+    display: block;
+}
+.arrow::before,.arrow::after{
+    position: absolute;
+    display: block;
+    content: "";
+    border-color: transparent;
+    border-style: solid;
+}
+.arrow::before {
+    left: 0;
+    border-width: .5rem .5rem .5rem 0;
+    border-right-color: rgba(0,0,0,.25);
+}
+.arrow::after {
+    left: 1px;
+    border-width: .5rem .5rem .5rem 0;
+    border-right-color: #fff;
+}
+.popover-header {
+    margin-top: 0px;
+    padding: .5rem .75rem;
+    margin-bottom: 0;
+    font-size: 1rem;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #ebebeb;
+    border-top-left-radius: calc(.3rem - 1px);
+    border-top-right-radius: calc(.3rem - 1px);
+}
+.popover-body {
+    padding: .5rem .75rem;
+    color: #212529;
+}
+.popover-footer{
+    padding: 0rem .75rem .5rem .75rem;
+}
+.primary{
+    background-color: #3f51b5;
+}
+.default{
+    background-color: gray;
+}
+.social-button-cancel{
+    left: 55px;
+}
+.social-button-comment{
+    left: 65px;
+}
+.social-button{
+    box-shadow: 0 3px 1px -2px rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12);
+    margin-right: 8px;
+    box-sizing: border-box;
+    position: relative;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    outline: 0;
+    border: none;
+    -webkit-tap-highlight-color: transparent;
+    display: inline-block;
+    white-space: nowrap;
+    text-decoration: none;
+    vertical-align: baseline;
+    text-align: center;
+    margin: 0;
+    min-width: 64px;
+    line-height: 27px;
+    padding: 0 12px;
+    border-radius: 4px;
+    overflow: visible;
+    transform: translate3d(0,0,0);
+    transition: background .4s cubic-bezier(.25,.8,.25,1),box-shadow 280ms cubic-bezier(.4,0,.2,1);
+}
+.comment-area{
+    width: 210px;
+}
+.comment-length{
+    padding-left: 170px;
+}
+.comment-list-div {
+    padding: 8px 8px 8px 16px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.comment-list-div li{
+    list-style: none;
+}
